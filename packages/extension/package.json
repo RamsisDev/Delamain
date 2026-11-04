@@ -1,0 +1,96 @@
+{
+  "name": "delamain-harness",
+  "displayName": "Delamain Harness",
+  "description": "Multi-provider orchestration harness: a principal plans, workers code, QA and a bugbot verify, and commands deliver the verdict.",
+  "version": "0.1.0",
+  "publisher": "delamain",
+  "license": "Apache-2.0",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RamsisDev/Delamain.git"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": ["AI", "Programming Languages", "Other"],
+  "main": "./dist/extension.cjs",
+  "activationEvents": ["onStartupFinished", "workspaceContains:.harness"],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "In an untrusted workspace the harness never runs commands, scripts or subflows from .harness/."
+    }
+  },
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "harness",
+          "title": "Harness",
+          "icon": "media/harness.svg"
+        }
+      ]
+    },
+    "views": {
+      "harness": [
+        {
+          "type": "webview",
+          "id": "harness.chat",
+          "name": "Chat"
+        }
+      ]
+    },
+    "commands": [
+      { "command": "harness.openChat", "title": "Open Chat", "category": "Harness" },
+      { "command": "harness.openConfig", "title": "Open Configuration", "category": "Harness", "icon": "$(settings-gear)" },
+      { "command": "harness.customize", "title": "Customize (copy the preset to .harness/)", "category": "Harness" },
+      { "command": "harness.dryRun", "title": "Dry Run", "category": "Harness" },
+      { "command": "harness.findLocalServers", "title": "Find Local Servers", "category": "Harness" },
+      { "command": "harness.testConnection", "title": "Test Connection", "category": "Harness" },
+      { "command": "harness.setApiKey", "title": "Set API Key", "category": "Harness" },
+      { "command": "harness.resume", "title": "Resume Session", "category": "Harness" },
+      { "command": "harness.cancel", "title": "Stop Session", "category": "Harness" },
+      { "command": "harness.installPreset", "title": "Install Preset from Git URL", "category": "Harness" },
+      { "command": "harness.showMetrics", "title": "Show Usage Metrics", "category": "Harness" },
+      { "command": "harness.newChat", "title": "New Chat", "category": "Harness", "icon": "$(add)" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "harness.newChat", "when": "view == harness.chat", "group": "navigation@1" },
+        { "command": "harness.openConfig", "when": "view == harness.chat", "group": "navigation@2" }
+      ]
+    },
+    "configuration": {
+      "title": "Harness",
+      "properties": {
+        "harness.globalDirectory": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Folder of the global configuration. Empty means `~/.harness`."
+        }
+      }
+    },
+    "yamlValidation": [
+      { "fileMatch": ["**/.harness/config.yml", "**/.harness/config.yaml"], "url": "./schemas/config.schema.json" },
+      { "fileMatch": ["**/.harness/workflows/*.yml", "**/.harness/workflows/*.yaml", "**/.harness/flows/*.yml", "**/.harness/flows/*.yaml"], "url": "./schemas/flow.schema.json" },
+      { "fileMatch": ["**/.harness/decisions/*.yml", "**/.harness/decisions/*.yaml"], "url": "./schemas/decisions.schema.json" }
+    ],
+    "jsonValidation": []
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "schema": "node scripts/build.mjs --schemas-only",
+    "package": "npm run build && vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@delamain/adapters": "0.1.0",
+    "@delamain/core": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "~1.95.0",
+    "@vscode/vsce": "^3.6.0",
+    "esbuild": "^0.25.0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "@delamain/adapters",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Node adapters for the harness core: providers, commands, git worktrees, file stores",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@delamain/core": "0.1.0"
+  }
+}

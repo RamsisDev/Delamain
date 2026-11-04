@@ -1,0 +1,23 @@
+{
+  "name": "@delamain/webview",
+  "version": "0.1.0",
+  "private": true,
+  "description": "React webview UI: chat, subtask tree, configuration screen and block editor",
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "dependencies": {
+    "@delamain/core": "0.1.0",
+    "@xyflow/react": "^12.8.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "vite": "^8.0.0"
+  }
+}

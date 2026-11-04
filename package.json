@@ -1,0 +1,29 @@
+{
+  "name": "delamain",
+  "private": true,
+  "description": "Multi-provider orchestration harness for VS Code",
+  "license": "Apache-2.0",
+  "type": "module",
+  "workspaces": [
+    "packages/core",
+    "packages/adapters",
+    "packages/webview",
+    "packages/extension"
+  ],
+  "scripts": {
+    "build": "npm run build -w @delamain/webview && npm run build -w delamain-harness",
+    "typecheck": "tsc -p packages/core && tsc -p packages/adapters && tsc -p packages/webview && tsc -p packages/extension",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "schema": "npm run schema -w delamain-harness",
+    "package": "npm run package -w delamain-harness"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

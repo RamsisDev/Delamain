@@ -1,0 +1,15 @@
+{
+  "name": "@delamain/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pure, editor-agnostic harness core: schema, router, flow engine, findings routing, escalations",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^5.2.0",
+    "yaml": "^2.8.0",
+    "zod": "^4.1.0"
+  }
+}
