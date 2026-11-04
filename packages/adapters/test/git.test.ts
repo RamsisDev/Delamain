@@ -61,6 +61,20 @@ describe("git workspace", () => {
     const conflict = await ws.commitAndMerge("s2", b.path, "tb", ["src/a.ts"], "b");
     expect(conflict).toEqual({ ok: false, conflicts: ["src/a.ts"] });
   });
+
+  it("still shows the committed diff after keeping the session branch and removing its worktree", async () => {
+    const repo = tempRepo({ "sum.js": "exports.sum = (a, b) => a - b;\n" });
+    const ws = new GitWorkspace(repo, mkdtempSync(join(tmpdir(), "harness-storage-")));
+    const session = await ws.startSession("kept");
+    writeFileSync(join(session.path, "sum.js"), "exports.sum = (a, b) => a + b;\n");
+    await ws.finalizeSession("kept", "Fix sum");
+    const before = await ws.sessionDiff("kept");
+    await ws.cleanupSession("kept", false);
+    expect(await ws.sessionDiff("kept")).toBe(before);
+    expect(before).toContain("+exports.sum = (a, b) => a + b;");
+    expect(readFileSync(join(repo, "sum.js"), "utf8")).toContain("a - b");
+    await ws.cleanupSession("kept", true);
+  });
 });
 
 describe("node command runner and tool host", () => {
@@ -69,8 +83,9 @@ describe("node command runner and tool host", () => {
     const ok = await runner.run({ command: "echo hello && exit 3", cwd: tmpdir(), timeoutMs: 5000 });
     expect(ok).toMatchObject({ exitCode: 3, timedOut: false });
     expect(ok.output).toContain("hello");
-    const slow = await runner.run({ command: "sleep 5", cwd: tmpdir(), timeoutMs: 200 });
+    const slow = await runner.run({ command: 'node -e "setTimeout(() => {}, 5000)"', cwd: tmpdir(), timeoutMs: 200 });
     expect(slow.timedOut).toBe(true);
+    expect(slow.durationMs).toBeLessThan(3000);
   });
 
   it("keeps file tools inside the working directory", async () => {

@@ -186,6 +186,7 @@ export function ModelsTab() {
                   className="star on"
                   disabled={!owned}
                   title={owned ? "Remove from favorites" : `Inherited from ${owner}; it can only be removed there`}
+                  aria-label="Remove from favorites"
                   onClick={() => cfg.edit((d) => removeKeyedEntry(d, ["models"], "ref", model.ref))}
                 >
                   ★
@@ -211,7 +212,7 @@ export function ModelsTab() {
         {rows.catalog.slice(0, LIST_LIMIT).map((row) => (
           <li key={`c-${row.ref}`} className="model-row">
             <div className="model-line">
-              <button type="button" className="star" title="Add to favorites" onClick={() => cfg.edit((d) => addEntry(d, ["models"], { ref: row.ref }))}>
+              <button type="button" className="star" title="Add to favorites" aria-label="Add to favorites" onClick={() => cfg.edit((d) => addEntry(d, ["models"], { ref: row.ref }))}>
                 ☆
               </button>
               <span className="model-name">{row.label}</span>

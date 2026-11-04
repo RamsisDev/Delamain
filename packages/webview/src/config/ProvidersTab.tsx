@@ -183,9 +183,9 @@ function ProviderCard({ provider, index }: { provider: Provider; index: number }
         <Field label="Label" issues={at("label")}>
           <OptionalText value={provider.label} disabled={disabled} onChange={(v) => set("label", v)} />
         </Field>
-        <Field label="Base URL" issues={at("base_url")} hint={provider.base_url ? undefined : providerBaseUrl(provider) ?? "Required"}>
+        {provider.type !== "cli" ? <Field label="Base URL" issues={at("base_url")} hint={provider.base_url ? undefined : providerBaseUrl(provider) ?? "Required"}>
           <OptionalText value={provider.base_url} disabled={disabled} placeholder={providerBaseUrl(provider)} onChange={(v) => set("base_url", v)} />
-        </Field>
+        </Field> : null}
         <Field label="Max concurrent" hint={`Default ${provider.local ? 1 : 4}`} issues={at("max_concurrent")}>
           <NumberInput value={provider.max_concurrent} min={1} disabled={disabled} onChange={(v) => set("max_concurrent", v)} />
         </Field>
@@ -198,7 +198,7 @@ function ProviderCard({ provider, index }: { provider: Provider; index: number }
           </Field>
         ) : null}
         {provider.type === "cli" ? (
-          <Field label="Prompt input" hint="Long prompts do not fit in one argument; use stdin if the CLI reads it." issues={at("prompt_input")}>
+          <Field label="Prompt input" hint="Use stdin for long prompts and multiline prompts on Windows; the command must read standard input." issues={at("prompt_input")}>
             <Select
               value={provider.prompt_input}
               empty="argument (default)"
@@ -304,7 +304,7 @@ function AddProvider() {
                 id: finalId,
                 type,
                 ...(type === "openai-compatible" ? { base_url: baseUrl } : {}),
-                ...(type === "cli" ? { command } : {}),
+                ...(type === "cli" ? { command, prompt_input: "stdin" } : {}),
               }),
             );
             setId("");

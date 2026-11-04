@@ -83,7 +83,7 @@ describe("default flow in a real repository", () => {
             text: `schema_version: 1
 commands:
   test: node test/sum.test.js
-  typecheck: "true"
+  typecheck: 'node -e "process.exit(0)"'
 providers:
   - { id: fake, type: openai-compatible, base_url: "http://localhost:9/v1", local: true, max_concurrent: 2 }
 models:

@@ -5,8 +5,29 @@
       "label": "harness: build",
       "type": "shell",
       "command": "npm run build",
+      "windows": {
+        "command": "npm.cmd run build"
+      },
       "group": "build",
       "problemMatcher": []
+    },
+    {
+      "label": "harness: Codex CLI",
+      "type": "process",
+      "command": "node",
+      "args": ["scripts/cli.mjs", "codex"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "group": "harness-cli" }
+    },
+    {
+      "label": "harness: Claude CLI",
+      "type": "process",
+      "command": "node",
+      "args": ["scripts/cli.mjs", "claude"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated", "group": "harness-cli" }
     }
   ]
 }

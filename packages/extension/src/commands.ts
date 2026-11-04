@@ -62,7 +62,7 @@ export function computeDryRun(harness: HarnessService, flowName: string, princip
 
 function run(command: string, args: string[], cwd?: string): Promise<void> {
   return new Promise((resolve, reject) =>
-    execFile(command, args, { cwd }, (error, _stdout, stderr) => (error ? reject(new Error(stderr || error.message)) : resolve())),
+    execFile(command, args, { cwd, windowsHide: true }, (error, _stdout, stderr) => (error ? reject(new Error(stderr || error.message)) : resolve())),
   );
 }
 
@@ -208,7 +208,9 @@ export function registerCommands(context: vscode.ExtensionContext, deps: Command
       await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Harness: cloning ${url}…` }, () => run("git", ["clone", "--depth", "1", url, temp]));
       const source = existsSync(join(temp, ".harness")) ? join(temp, ".harness") : temp;
       await rm(join(source, ".git"), { recursive: true, force: true });
-      const overwrite = (await vscode.window.showQuickPick(["Keep my existing files", "Overwrite existing files"], { placeHolder: "When a file already exists…" })) === "Overwrite existing files";
+      const choice = await vscode.window.showQuickPick(["Keep my existing files", "Overwrite existing files"], { placeHolder: "When a file already exists…" });
+      if (!choice) return;
+      const overwrite = choice === "Overwrite existing files";
       const copied = await copyTree(source, target, overwrite);
       await harness.reload();
       void vscode.window.showInformationMessage(`Harness: installed ${copied.length} file(s) into ${target}.`);

@@ -33,8 +33,8 @@ describe("layers", () => {
   it("Customize copies the preset without overwriting edits, and the copy loads cleanly", async () => {
     const dir = join(mkdtempSync(join(tmpdir(), "harness-layer-")), ".harness");
     const first = await copyPreset(dir);
-    expect(first.some((p) => p.endsWith("workflows/default.yml"))).toBe(true);
-    expect(first.some((p) => p.endsWith("decisions/_REFERENCE.md"))).toBe(true);
+    expect(first).toContain(join(dir, "workflows", "default.yml"));
+    expect(first).toContain(join(dir, "decisions", "_REFERENCE.md"));
     writeFileSync(join(dir, "config.yml"), "schema_version: 1\n# mine\n");
     expect(await copyPreset(dir)).toEqual([]);
     expect(readFileSync(join(dir, "config.yml"), "utf8")).toContain("# mine");

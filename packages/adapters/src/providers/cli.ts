@@ -1,5 +1,6 @@
-import { spawn } from "node:child_process";
+import spawn from "cross-spawn";
 import type { ChatEvent, ChatRequest, Health, ModelInfo, ProviderAdapter } from "@delamain/core";
+import { killProcessTree } from "../node/process.ts";
 
 /** Splits a command line into argv, honoring single and double quotes. */
 export function splitCommand(command: string): string[] {
@@ -38,7 +39,7 @@ export function renderConversation(request: ChatRequest): string {
 }
 
 /** Linux caps a single argument at 128 KiB; longer prompts must go through stdin. */
-const MAX_ARGUMENT_BYTES = 120_000;
+const MAX_ARGUMENT_BYTES = process.platform === "win32" ? 7_000 : 120_000;
 
 export interface CliOptions {
   /** `argument` (default) appends the prompt to the command line; `stdin` writes it to standard input. */
@@ -67,7 +68,7 @@ export class CliAdapter implements ProviderAdapter {
     if (!program) return { status: "offline", message: "No command configured" };
     const started = Date.now();
     return new Promise((resolve) => {
-      const child = spawn(program, ["--version"], { stdio: "ignore", timeout: 10_000 });
+      const child = spawn(program, ["--version"], { stdio: "ignore", windowsHide: true, timeout: 10_000 });
       child.on("error", (e) => resolve({ status: "offline", message: `${program}: ${e.message}` }));
       child.on("exit", (code) =>
         resolve(code === 0 ? { status: "online", latencyMs: Date.now() - started } : { status: "offline", message: `${program} --version exited with ${code}` }),
@@ -76,6 +77,7 @@ export class CliAdapter implements ProviderAdapter {
   }
 
   async *stream(request: ChatRequest, signal: AbortSignal): AsyncIterable<ChatEvent> {
+    if (signal.aborted) return;
     const [program, ...args] = splitCommand(this.command);
     if (!program) {
       yield { type: "error", kind: "bad_request", message: "No command configured" };
@@ -84,6 +86,11 @@ export class CliAdapter implements ProviderAdapter {
     const prompt = renderConversation(request);
     const viaStdin = this.options.promptInput === "stdin";
     const bytes = Buffer.byteLength(prompt);
+    // Windows .cmd shims go through cmd.exe, which cannot quote multiline arguments safely.
+    if (!viaStdin && process.platform === "win32" && /[\r\n]/.test(prompt)) {
+      yield { type: "error", kind: "bad_request", message: `Multiline prompts on Windows require prompt_input: stdin on provider ${this.id}` };
+      return;
+    }
     if (!viaStdin && bytes > MAX_ARGUMENT_BYTES) {
       yield {
         type: "error",
@@ -92,7 +99,14 @@ export class CliAdapter implements ProviderAdapter {
       };
       return;
     }
-    const child = spawn(program, viaStdin ? args : [...args, prompt], { cwd: request.cwd, signal, stdio: [viaStdin ? "pipe" : "ignore", "pipe", "pipe"] });
+    const child = spawn(program, viaStdin ? args : [...args, prompt], {
+      cwd: request.cwd,
+      detached: process.platform !== "win32",
+      windowsHide: true,
+      stdio: [viaStdin ? "pipe" : "ignore", "pipe", "pipe"],
+    });
+    const onAbort = () => killProcessTree(child);
+    signal.addEventListener("abort", onAbort, { once: true });
     if (viaStdin) {
       child.stdin?.on("error", () => undefined);
       child.stdin?.end(prompt);
@@ -118,14 +132,19 @@ export class CliAdapter implements ProviderAdapter {
       finished = true;
       wake?.();
     });
-    while (!finished || queue.length) {
-      if (!queue.length) await new Promise<void>((resolve) => (wake = resolve));
-      wake = undefined;
-      while (queue.length) {
-        const event = queue.shift()!;
-        yield event;
-        if (event.type === "error") return;
+    try {
+      while (!finished || queue.length) {
+        if (!queue.length) await new Promise<void>((resolve) => (wake = resolve));
+        wake = undefined;
+        while (queue.length) {
+          const event = queue.shift()!;
+          yield event;
+          if (event.type === "error") return;
+        }
       }
+    } finally {
+      signal.removeEventListener("abort", onAbort);
+      if (!finished) killProcessTree(child);
     }
   }
 }

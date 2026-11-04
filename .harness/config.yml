@@ -1,0 +1,47 @@
+schema_version: 1
+providers:
+  - id: codex
+    type: cli
+    label: Codex CLI
+    command: '"codex" exec --sandbox workspace-write -'
+    prompt_input: stdin
+    max_concurrent: 1
+  - id: claude
+    type: cli
+    label: Claude CLI
+    command: '"C:/Users/devra/.local/bin/claude.exe" -p --output-format text --permission-mode acceptEdits'
+    prompt_input: stdin
+    max_concurrent: 1
+  - id: jan
+    type: openai-compatible
+    label: Jan
+    base_url: http://localhost:1337/v1
+    local: true
+    max_concurrent: 1
+models:
+  - ref: codex/default
+    label: Codex CLI
+    tool_calling: false
+    roles:
+      - orchestrator
+      - worker
+      - short-tasks
+  - ref: claude/default
+    label: Claude CLI
+    tool_calling: false
+    roles:
+      - orchestrator-fallback
+      - qa
+      - reviewer
+  - ref: jan/Qwen3_8-27B-UD-IQ4_XS
+commands:
+  test: npm test
+  typecheck: npm run typecheck
+defaults:
+  flow: single-agent
+  approval: review
+router:
+  default:
+    use: claude/default
+    fallback:
+      - claude/default

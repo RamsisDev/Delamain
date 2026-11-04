@@ -36,6 +36,7 @@ function SettingsGear({ nodeId, data }: { nodeId: string; data: BlockNodeData })
       type="button"
       className={cx("flow-node-gear", "nodrag", custom.length > 0 && "customized")}
       title={["Block settings", ...custom].join("\n")}
+      aria-label={`Settings of ${data.block.id}`}
       onClick={(event) => {
         event.stopPropagation();
         actions.openSettings(nodeId);

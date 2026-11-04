@@ -63,60 +63,62 @@ export function OrchestrationsTab() {
       {!cfg.snapshot.trusted ? (
         <p className="issue-warning">Untrusted workspace: commands, scripts and subflows from .harness/ will not run.</p>
       ) : null}
-      <table className="table flows-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Layer</th>
-            <th>File</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {flows.map((entry) => (
-            <tr key={`${entry.layer}:${entry.name}`} className={editing?.name === entry.name && !editing.isNew ? "row-selected" : undefined}>
-              <td>
-                <strong>{entry.name}</strong> {entry.name === defaultFlow ? <Pill>default</Pill> : null}
-                {entry.flow.reusable ? <Pill title="Other flows can run it with a Subflow block">reusable</Pill> : null}
-                {entry.invalid ? (
-                  <Pill tone="error" title="This flow has errors: fix it to run it">
-                    invalid
-                  </Pill>
-                ) : null}
-                {entry.flow.description ? <div className="muted">{entry.flow.description}</div> : null}
-              </td>
-              <td>
-                <LayerBadge layer={entry.layer} />
-              </td>
-              <td className="muted path-cell" title={entry.path}>
-                {entry.path}
-              </td>
-              <td className="actions-cell">
-                <Button small variant="primary" onClick={() => open({ name: entry.name, layer: entry.layer, path: entry.path, flow: entry.flow })}>
-                  Edit
-                </Button>
-                <Button
-                  small
-                  onClick={() => {
-                    const name = uniqueName(`${entry.name}-copy`, names);
-                    open({ name, layer: cfg.destination, flow: { ...entry.flow, name }, isNew: true });
-                  }}
-                >
-                  Duplicate
-                </Button>
-                <Button small onClick={() => post({ type: "dryrun", flow: entry.name })}>
-                  Dry run
-                </Button>
-                {entry.layer === cfg.destination ? (
-                  <Button small variant="danger" onClick={() => post({ type: "flow.delete", destination: cfg.destination, name: entry.name })}>
-                    Delete
-                  </Button>
-                ) : null}
-              </td>
+      <div className="table-scroll" role="region" aria-label="Orchestrations" tabIndex={0}>
+        <table className="table flows-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Layer</th>
+              <th>File</th>
+              <th />
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {flows.map((entry) => (
+              <tr key={`${entry.layer}:${entry.name}`} className={editing?.name === entry.name && !editing.isNew ? "row-selected" : undefined}>
+                <td>
+                  <strong>{entry.name}</strong> {entry.name === defaultFlow ? <Pill>default</Pill> : null}
+                  {entry.flow.reusable ? <Pill title="Other flows can run it with a Subflow block">reusable</Pill> : null}
+                  {entry.invalid ? (
+                    <Pill tone="error" title="This flow has errors: fix it to run it">
+                      invalid
+                    </Pill>
+                  ) : null}
+                  {entry.flow.description ? <div className="muted">{entry.flow.description}</div> : null}
+                </td>
+                <td>
+                  <LayerBadge layer={entry.layer} />
+                </td>
+                <td className="muted path-cell" title={entry.path}>
+                  {entry.path}
+                </td>
+                <td className="actions-cell">
+                  <Button small variant="primary" onClick={() => open({ name: entry.name, layer: entry.layer, path: entry.path, flow: entry.flow })}>
+                    Edit
+                  </Button>
+                  <Button
+                    small
+                    onClick={() => {
+                      const name = uniqueName(`${entry.name}-copy`, names);
+                      open({ name, layer: cfg.destination, flow: { ...entry.flow, name }, isNew: true });
+                    }}
+                  >
+                    Duplicate
+                  </Button>
+                  <Button small onClick={() => post({ type: "dryrun", flow: entry.name })}>
+                    Dry run
+                  </Button>
+                  {entry.layer === cfg.destination ? (
+                    <Button small variant="danger" onClick={() => post({ type: "flow.delete", destination: cfg.destination, name: entry.name })}>
+                      Delete
+                    </Button>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
       <Button
         onClick={() => {
           const name = uniqueName("new-flow", names);

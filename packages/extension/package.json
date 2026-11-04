@@ -4,7 +4,7 @@
   "description": "Multi-provider orchestration harness: a principal plans, workers code, QA and a bugbot verify, and commands deliver the verdict.",
   "version": "0.1.0",
   "publisher": "delamain",
-  "license": "Apache-2.0",
+  "license": "PolyForm-Small-Business-1.0.0",
   "private": true,
   "repository": {
     "type": "git",
@@ -82,7 +82,8 @@
     "build": "node scripts/build.mjs",
     "watch": "node scripts/build.mjs --watch",
     "schema": "node scripts/build.mjs --schemas-only",
-    "package": "npm run build && vsce package --no-dependencies"
+    "vscode:prepublish": "npm run build -w @delamain/webview && npm run build",
+    "package": "vsce package --no-dependencies"
   },
   "dependencies": {
     "@delamain/adapters": "0.1.0",

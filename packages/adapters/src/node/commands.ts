@@ -1,5 +1,6 @@
 import { spawn } from "node:child_process";
 import type { CommandResult, CommandRunner } from "@delamain/core";
+import { killProcessTree } from "./process.ts";
 
 const MAX_OUTPUT = 2_000_000;
 
@@ -9,6 +10,7 @@ export class NodeCommandRunner implements CommandRunner {
 
   run(input: { command: string; cwd: string; timeoutMs: number; env?: Record<string, string>; signal?: AbortSignal }): Promise<CommandResult> {
     const started = Date.now();
+    if (input.signal?.aborted) return Promise.resolve({ exitCode: null, output: "Cancelled", timedOut: false, durationMs: 0 });
     return new Promise((resolve) => {
       let output = "";
       let timedOut = false;
@@ -17,6 +19,7 @@ export class NodeCommandRunner implements CommandRunner {
         cwd: input.cwd,
         shell: true,
         detached: process.platform !== "win32",
+        windowsHide: true,
         env: { ...this.baseEnv, ...input.env, CI: "1", FORCE_COLOR: "0" },
         stdio: ["ignore", "pipe", "pipe"],
       });
@@ -27,13 +30,7 @@ export class NodeCommandRunner implements CommandRunner {
       child.stdout.on("data", append);
       child.stderr.on("data", append);
       const kill = () => {
-        if (child.pid === undefined) return;
-        try {
-          if (process.platform !== "win32") process.kill(-child.pid, "SIGKILL");
-          else child.kill("SIGKILL");
-        } catch {
-          child.kill("SIGKILL");
-        }
+        killProcessTree(child);
       };
       const timer = setTimeout(() => {
         timedOut = true;

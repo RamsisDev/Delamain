@@ -173,6 +173,10 @@ export class GitWorkspace implements Workspace {
 
   async sessionDiff(sessionId: string): Promise<string> {
     const path = this.sessionPath(sessionId);
+    // Keeping a result removes its worktree but leaves the committed session branch.
+    if (!existsSync(path)) {
+      return git(this.root, ["diff", "--no-color", "--no-ext-diff", await this.base(path), this.sessionBranch(sessionId)]);
+    }
     return this.diff(path);
   }
 

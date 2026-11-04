@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { mkdtempSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import type { ChatEvent } from "@delamain/core";
 import {
   AnthropicAdapter,
@@ -220,10 +223,33 @@ describe("errors, discovery and probe", () => {
 });
 
 describe("cli adapter", () => {
+  it.runIf(process.platform === "win32")("runs npm-style command shims from paths with spaces without interpreting the prompt", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "harness cli "));
+    const script = join(dir, "echo.cjs");
+    writeFileSync(script, "if (process.argv.includes('--version')) process.stdout.write('qa-cli 1.0'); else process.stdin.pipe(process.stdout);");
+    const shim = join(dir, "echo.cmd");
+    writeFileSync(shim, `@echo off\r\n"${process.execPath}" "${script}" %*\r\n`);
+    const adapter = new CliAdapter("echo", `"${shim}"`, { promptInput: "stdin" });
+    expect(await adapter.healthCheck()).toMatchObject({ status: "online" });
+    const prompt = 'hello & echo NOT_A_COMMAND | (safe) "quoted"';
+    const events = await collect(adapter.stream({ model: "default", system: "sys", messages: [{ role: "user", content: prompt }] }, new AbortController().signal));
+    expect(events.filter(e => e.type === "text").map(e => e.type === "text" ? e.delta : "").join("")).toBe(`sys\n\n${prompt}`);
+    expect(events.at(-1)).toMatchObject({ type: "done" });
+    const argumentAdapter = new CliAdapter("echo", `"${shim}"`);
+    const rejected = await collect(argumentAdapter.stream({ model: "default", system: "sys", messages: [{ role: "user", content: prompt }] }, new AbortController().signal));
+    expect(rejected).toEqual([{ type: "error", kind: "bad_request", message: "Multiline prompts on Windows require prompt_input: stdin on provider echo" }]);
+  });
+
+  it("does not start a cancelled request", async () => {
+    const controller = new AbortController();
+    controller.abort();
+    const adapter = new CliAdapter("echo", `"${process.execPath}" -e "process.stdout.write('unexpected')"`);
+    expect(await collect(adapter.stream({ model: "default", system: "sys", messages: [] }, controller.signal))).toEqual([]);
+  });
   const single = { model: "default", system: "sys", messages: [{ role: "user" as const, content: "hello" }] };
 
   it("writes the prompt to stdin when configured", async () => {
-    const adapter = await createAdapter({ id: "echo", type: "cli", command: "cat", prompt_input: "stdin" }, { get: async () => undefined });
+    const adapter = await createAdapter({ id: "echo", type: "cli", command: `"${process.execPath}" -e "process.stdin.pipe(process.stdout)"`, prompt_input: "stdin" }, { get: async () => undefined });
     const events = await collect(adapter.stream(single, new AbortController().signal));
     expect(events.filter((e) => e.type === "text").map((e) => (e as { delta: string }).delta).join("")).toBe("sys\n\nhello");
     expect(events.at(-1)).toEqual({ type: "done", stopReason: "exit" });
